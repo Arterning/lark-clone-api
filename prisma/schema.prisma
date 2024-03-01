@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String?         @unique
+  name          String
+  password      String
+  teamId        String?
+  team          Team?           @relation(fields: [teamId], references: [id])
+  authorTasks   Task[]          @relation("Author")
+  assignedTasks Task[]          @relation("Assignee")
+  watchTasks    UserWatchTask[]
+  comments      Comment[]
+}
+
+model Team {
+  id    String @id @default(uuid())
+  name  String
+  users User[]
+}
+
+model Task {
+  id             String          @id @default(uuid())
+  teamId         String
+  title          String
+  description    String?         @db.Text
+  startDate      DateTime?
+  endDate        DateTime?
+  finished       Boolean         @default(false)
+  author         User            @relation("Author", fields: [authorId], references: [id])
+  authorId       String
+  assignee       User?           @relation("Assignee", fields: [assigneeId], references: [id])
+  assigneeId     String?
+  comments       Comment[]
+  children       Task[]          @relation("TaskToTask")
+  parent         Task?           @relation("TaskToTask", fields: [parentId], references: [id])
+  parentId       String?
+  userWatchTasks UserWatchTask[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model UserWatchTask {
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@id([taskId, userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  teamId    String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ACTION {
+  CREATE
+  UPDATE
+  DELETE
+  WATCH
+  UNWATCH
+}
+
+enum ENTITY_TYPE {
+  TASK
+  COMMENT
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  teamId      String
+  action      ACTION
+  entityId    String
+  entityType  ENTITY_TYPE
+  entityTitle String
+  userId      String
+  userName    String      @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
