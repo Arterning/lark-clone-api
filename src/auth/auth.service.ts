@@ -31,6 +31,10 @@ export class AuthService {
   }
 
   async register(name: string, email: string, password: string) {
+    const user = await this.userService.findOne(email);
+    if (user) {
+      throw new Error('User already exists');
+    }
     return this.userService.createUser({ name, email, password });
   }
 }

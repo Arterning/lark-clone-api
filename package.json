@@ -1,8 +1,8 @@
 {
-  "name": "rest-nestjs",
+  "name": "lark-clone-api",
   "version": "0.0.1",
   "private": true,
-  "description": "",
+  "description": "Lark clone api",
   "license": "UNLICENSED",
   "author": "",
   "scripts": {
@@ -43,6 +43,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "10.2.1",
+    "@nestjs/swagger": "^7.3.0",
     "@prisma/client": "5.2.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.1",

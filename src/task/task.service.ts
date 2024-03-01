@@ -15,17 +15,20 @@ export class TaskService {
   ) {}
 
   async create(createTaskDto: CreateTaskDto, user: User): Promise<TaskModel> {
-    const { id: authorId, teamId, name } = user;
-
+    const { id, teamId, name } = user;
     const task = await this.prismaService.task.create({
-      data: { ...createTaskDto, authorId, teamId },
+      data: {
+        ...createTaskDto,
+        authorId: id,
+        teamId,
+      },
     });
 
     await this.auditService.create({
       entityType: ENTITY_TYPE.TASK,
       action: ACTION.CREATE,
       teamId,
-      userId: authorId,
+      userId: id,
       userName: name,
       entityId: task.id,
       entityTitle: task.title,
@@ -139,13 +142,18 @@ export class TaskService {
 
   /**
    * 查找一个任务
-   * @param id 
-   * @param user 
-   * @returns 
+   * @param id
+   * @param user
+   * @returns
    */
   findOne(id: string, user: User) {
     const { id: authorId } = user;
-    return this.prismaService.task.findUnique({ where: { id, authorId } });
+    return this.prismaService.task.findUnique({
+      where: { id, authorId },
+      include: {
+        children: true,
+      },
+    });
   }
 
   /**
@@ -155,19 +163,34 @@ export class TaskService {
    */
   watchTask(taskId: string, user: User) {
     const { id: userId } = user;
+    
+    //check if it has been watched
+    const hasWatched = this.prismaService.userWatchTask.findUnique({
+      where: {
+        taskId_userId: {
+          userId: userId,
+          taskId: taskId
+        }
+      }
+    })
+
+    if (hasWatched) {
+      return hasWatched;
+    }
+
     return this.prismaService.userWatchTask.create({
       data: {
         taskId,
-        userId
+        userId,
       },
     });
   }
 
   /**
    * 更新任务
-   * @param id 
-   * @param updateTaskDto 
-   * @returns 
+   * @param id
+   * @param updateTaskDto
+   * @returns
    */
   async update(id: string, updateTaskDto: UpdateTaskDto, user: User) {
     const { isFinished } = updateTaskDto;
@@ -219,7 +242,7 @@ export class TaskService {
   async remove(id: string, user: User) {
     const task = await this.prismaService.task.delete({ where: { id } });
 
-    const {teamId, id: userId, name: userName} = user;
+    const { teamId, id: userId, name: userName } = user;
     await this.auditService.create({
       entityType: ENTITY_TYPE.TASK,
       action: ACTION.DELETE,
