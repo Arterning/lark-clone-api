@@ -11,6 +11,8 @@ async function bootstrap() {
   // 创建swagger文档
   generateDocument(app);
 
+  app.enableCors();
+
   app.enableShutdownHooks();
   await app.listen(3000);
   
